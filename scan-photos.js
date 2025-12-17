@@ -15,7 +15,7 @@ const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
 
 function scanPhotos() {
     console.log('🌸 Scanning photos folder...\n');
-    
+
     if (!fs.existsSync(PHOTOS_DIR)) {
         fs.mkdirSync(PHOTOS_DIR);
         console.log('📁 Created photos/ folder');
@@ -24,12 +24,22 @@ function scanPhotos() {
     const files = fs.readdirSync(PHOTOS_DIR);
     const photos = [];
 
+    // Check for base URL argument (e.g. node scan-photos.js --base-url https://oss.aliyun.com/...)
+    const args = process.argv.slice(2);
+    let baseUrl = 'photos/';
+    const urlArgIndex = args.indexOf('--base-url');
+    if (urlArgIndex !== -1 && args[urlArgIndex + 1]) {
+        baseUrl = args[urlArgIndex + 1];
+        if (!baseUrl.endsWith('/')) baseUrl += '/';
+        console.log(`🌐 Using Base URL: ${baseUrl}`);
+    }
+
     files.forEach((file, index) => {
         const ext = path.extname(file).toLowerCase();
         if (IMAGE_EXTENSIONS.includes(ext)) {
             const name = path.basename(file, ext);
             photos.push({
-                url: `photos/${file}`,
+                url: `${baseUrl}${file}`,
                 title: formatTitle(name),
                 date: `Memory ${index + 1}`
             });
@@ -40,7 +50,7 @@ function scanPhotos() {
     if (photos.length === 0) {
         console.log('\n⚠️  No photos found! Add images to the photos/ folder.');
         console.log('   Supported formats: jpg, jpeg, png, webp, gif\n');
-        
+
         // Create sample config anyway
         photos.push(
             { url: 'photos/sample.jpg', title: 'Add Your Photos', date: 'Drop images in photos/' }

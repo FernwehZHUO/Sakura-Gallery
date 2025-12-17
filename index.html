@@ -485,7 +485,7 @@
             <button id="enable-camera-btn"
                 style="display:none; margin: 10px auto; padding: 8px 16px; background: rgba(253, 164, 175, 0.2); border: 1px solid var(--rose-300); color: var(--rose-200); border-radius: 20px; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 0.8rem; transition: all 0.3s;">Enable
                 Camera</button>
-            <p class="instruction-text">Pinch to select a memory</p>
+            <p class="instruction-text">Pinch to select • Wave to close</p>
         </div>
     </div>
 
@@ -986,6 +986,23 @@
 
                 wasPinching = isPinching;
                 isPinching = dist < 0.05;
+
+                // Wave Detection (Sidebar movement while hand is open)
+                const isModalOpen = document.getElementById('gallery-modal').classList.contains('active');
+                if (isModalOpen && !isPinching) {
+                    // Check for rapid horizontal movement
+                    if (Math.abs(handVelocity.x) > 0.04) {
+                        closeModal();
+                        // Visual feedback for wave
+                        const cursorEl = document.getElementById('gesture-cursor');
+                        cursorEl.style.transform = 'translate(-50%, -50%) scale(1.5)';
+                        cursorEl.style.borderColor = '#fff';
+                        setTimeout(() => {
+                            cursorEl.style.transform = 'translate(-50%, -50%) scale(1)';
+                            cursorEl.style.borderColor = 'rgba(253, 164, 175, 0.6)';
+                        }, 200);
+                    }
+                }
 
                 if (isPinching && !wasPinching) {
                     onPinchStart();
