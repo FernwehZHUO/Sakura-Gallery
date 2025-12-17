@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guilin Memoir - Cherry Blossom Memories</title>
+    <meta name="description" content="A romantic photo memoir of our Guilin journey together">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Outfit:wght@200;300;400&display=swap"
+        rel="stylesheet">
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+
+    <style>
+        :root {
+            --rose-100: #ffe4e6;
+            --rose-200: #fecdd3;
+            --rose-300: #fda4af;
+            --rose-400: #fb7185;
+            --rose-500: #f43f5e;
+            --purple-900: #1a0a1f;
+            --purple-950: #0d0510;
+            --gold: #d4a574;
+            --cream: #fef7f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--purple-950) 0%, #1a0a2e 50%, #2d1b3d 100%);
+            color: var(--cream);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+        }
+
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--purple-950) 0%, #1a0a2e 100%);
+            z-index: 1000;
+            transition: opacity 1.5s ease-out, visibility 1.5s;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-petals {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin-bottom: 2rem;
+        }
+
+        .loading-petal {
+            position: absolute;
+            width: 20px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--rose-300) 0%, var(--rose-400) 100%);
+            border-radius: 50% 0 50% 50%;
+            opacity: 0.8;
+            animation: petalSpin 3s ease-in-out infinite;
+        }
+
+        .loading-petal:nth-child(1) {
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            animation-delay: 0s;
+        }
+
+        .loading-petal:nth-child(2) {
+            top: 25%;
+            right: 10%;
+            transform: rotate(72deg);
+            animation-delay: 0.2s;
+        }
+
+        .loading-petal:nth-child(3) {
+            bottom: 20%;
+            right: 15%;
+            transform: rotate(144deg);
+            animation-delay: 0.4s;
+        }
+
+        .loading-petal:nth-child(4) {
+            bottom: 20%;
+            left: 15%;
+            transform: rotate(216deg);
+            animation-delay: 0.6s;
+        }
+
+        .loading-petal:nth-child(5) {
+            top: 25%;
+            left: 10%;
+            transform: rotate(288deg);
+            animation-delay: 0.8s;
+        }
+
+        @keyframes petalSpin {
+
+            0%,
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.2) rotate(180deg);
+                opacity: 1;
+            }
+        }
+
+        .loading-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            color: var(--rose-200);
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+
+        .loading-bar {
+            width: 200px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .loading-progress {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--rose-400), var(--rose-300));
+            transition: width 0.3s ease;
+        }
+
+        /* Hidden Video */
+        .video-hidden {
+            position: absolute;
+            opacity: 0;
+            width: 1px;
+            height: 1px;
+            pointer-events: none;
+        }
+
+        /* Gesture Cursor */
+        #gesture-cursor {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(253, 164, 175, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 100;
+            transform: translate(-50%, -50%);
+            transition: all 0.15s ease-out;
+            box-shadow: 0 0 20px rgba(253, 164, 175, 0.3);
+            display: none;
+        }
+
+        #gesture-cursor::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border: 1px solid rgba(253, 164, 175, 0.4);
+            border-radius: 50%;
+        }
+
+        #gesture-cursor.pinching {
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, var(--rose-300) 0%, var(--rose-400) 100%);
+            border-color: var(--rose-200);
+            box-shadow: 0 0 30px rgba(253, 164, 175, 0.6);
+        }
+
+        #gesture-cursor.pinching::before {
+            display: none;
+        }
+
+        /* UI Panels */
+        .ui-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .header-panel {
+            position: absolute;
+            top: 40px;
+            left: 50px;
+        }
+
+        .site-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 0.15em;
+            background: linear-gradient(135deg, var(--cream) 0%, var(--rose-200) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .site-subtitle {
+            font-size: 0.7rem;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: var(--rose-300);
+            opacity: 0.7;
+        }
+
+        .status-panel {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+
+        .status-text {
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--rose-300);
+            opacity: 0.6;
+        }
+
+        .instruction-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            font-style: italic;
+            color: var(--cream);
+            opacity: 0.5;
+            margin-top: 0.5rem;
+        }
+
+        /* Photo Counter */
+        .photo-counter {
+            position: absolute;
+            top: 40px;
+            right: 50px;
+            text-align: right;
+        }
+
+        .counter-number {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3rem;
+            font-weight: 300;
+            color: var(--rose-200);
+            line-height: 1;
+        }
+
+        .counter-label {
+            font-size: 0.6rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--rose-300);
+            opacity: 0.5;
+        }
+
+        /* Fullscreen Gallery Modal */
+        .gallery-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(13, 5, 16, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s ease;
+        }
+
+        .gallery-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            max-width: 85vw;
+            max-height: 85vh;
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.5s ease;
+        }
+
+        .gallery-modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-image {
+            max-width: 100%;
+            max-height: 75vh;
+            border-radius: 4px;
+            box-shadow: 0 30px 100px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-caption {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .modal-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem;
+            font-weight: 400;
+            color: var(--cream);
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-date {
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            color: var(--rose-300);
+            opacity: 0.7;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(253, 164, 175, 0.3);
+            border-radius: 50%;
+            background: transparent;
+            color: var(--rose-200);
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+        }
+
+        .modal-close:hover {
+            background: var(--rose-400);
+            border-color: var(--rose-400);
+            color: var(--purple-950);
+        }
+
+        /* Decorative Elements */
+        .corner-decoration {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 1px solid rgba(253, 164, 175, 0.1);
+            pointer-events: none;
+        }
+
+        .corner-decoration.top-left {
+            top: 30px;
+            left: 30px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .corner-decoration.bottom-right {
+            bottom: 30px;
+            right: 30px;
+            border-left: none;
+            border-top: none;
+        }
+
+        /* Ambient Particles (CSS) */
+        .ambient-particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .ambient-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--rose-300);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: floatUp 15s linear infinite;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 0.3;
+            }
+
+            90% {
+                opacity: 0.3;
+            }
+
+            100% {
+                transform: translateY(-100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-petals">
+            <div class="loading-petal"></div>
+            <div class="loading-petal"></div>
+            <div class="loading-petal"></div>
+            <div class="loading-petal"></div>
+            <div class="loading-petal"></div>
+        </div>
+        <p class="loading-text">Gathering Memories</p>
+        <div class="loading-bar">
+            <div id="loading-progress" class="loading-progress"></div>
+        </div>
+    </div>
+
+    <!-- Gesture Cursor -->
+    <div id="gesture-cursor"></div>
+
+    <!-- Hidden Video for Camera -->
+    <video class="video-hidden" id="video-input" autoplay playsinline></video>
+
+    <!-- Ambient Particles -->
+    <div class="ambient-particles" id="ambient-particles"></div>
+
+    <!-- UI Overlay -->
+    <div class="ui-overlay">
+        <div class="corner-decoration top-left"></div>
+        <div class="corner-decoration bottom-right"></div>
+
+        <div class="header-panel">
+            <h1 class="site-title">Guilin Memories</h1>
+            <p class="site-subtitle">A Journey Through Cherry Blossoms</p>
+        </div>
+
+        <div class="photo-counter">
+            <div class="counter-number" id="photo-count">12</div>
+            <div class="counter-label">Memories</div>
+        </div>
+
+        <div class="status-panel">
+            <div class="status-text" id="status-text">Initializing Hand Tracking</div>
+            <button id="enable-camera-btn"
+                style="display:none; margin: 10px auto; padding: 8px 16px; background: rgba(253, 164, 175, 0.2); border: 1px solid var(--rose-300); color: var(--rose-200); border-radius: 20px; cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 0.8rem; transition: all 0.3s;">Enable
+                Camera</button>
+            <p class="instruction-text">Pinch to select a memory</p>
+        </div>
+    </div>
+
+    <!-- Fullscreen Gallery Modal -->
+    <div class="gallery-modal" id="gallery-modal">
+        <div class="modal-content">
+            <button class="modal-close" id="modal-close">×</button>
+            <img id="modal-image" class="modal-image" src="" alt="Selected memory">
+            <div class="modal-caption">
+                <h2 class="modal-title" id="modal-title">Memory Title</h2>
+                <p class="modal-date" id="modal-date">December 2024</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        const CONFIG = {
+            // Photos will be loaded from photos.json (run: node scan-photos.js)
+            photos: [],
+            petalCount: 400,
+            vortexRadius: { min: 2, max: 5 },
+            vortexHeight: 10,
+            bloomStrength: 0.8,
+            bloomRadius: 0.4,
+            bloomThreshold: 0.2
+        };
+
+        // Default placeholder photos (shown if photos.json doesn't exist)
+        const DEFAULT_PHOTOS = [
+            { url: '', title: 'Add Your Photos', date: 'Run: node scan-photos.js' },
+            { url: '', title: 'Drop images in photos/', date: 'Then refresh this page' },
+            { url: '', title: 'Supported: jpg, png, webp', date: 'Any filename works!' }
+        ];
+
+        // ============================================
+        // GLOBAL STATE
+        // ============================================
+        let scene, camera, renderer, composer;
+        let raycaster = new THREE.Raycaster();
+        let cursor3D = new THREE.Vector2();
+        let photoMeshes = [];
+        let petalMeshes = [];
+        let isPinching = false;
+        let wasPinching = false;
+        let selectedPhoto = null;
+        let vortexActive = true;
+        let handVelocity = { x: 0, y: 0 };
+        let lastHandPos = { x: 0, y: 0 };
+        let loadedCount = 0;
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        async function init() {
+            try {
+                setupScene();
+                setupLighting();
+                createCherryBlossoms();
+
+                // Load photos from JSON
+                try {
+                    await loadPhotosFromJSON();
+                    loadPhotos();
+                } catch (photoError) {
+                    console.error("Error loading photos:", photoError);
+                    // Force hide loading screen if photo loading crashes
+                    document.getElementById('loading-screen').classList.add('hidden');
+                }
+
+                setupPostProcessing();
+                setupGestureTracking();
+                createAmbientParticles();
+
+                // Start animation loop
+                animate();
+
+                window.addEventListener('resize', onWindowResize);
+                document.getElementById('modal-close').addEventListener('click', closeModal);
+                document.getElementById('gallery-modal').addEventListener('click', (e) => {
+                    if (e.target === e.currentTarget) closeModal();
+                });
+
+                // Keyboard support
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') closeModal();
+                });
+
+            } catch (err) {
+                console.error("Critical Initialization Error:", err);
+                // Try to start animation anyway just to show something
+                if (scene && camera && renderer) animate();
+            }
+        }
+
+        function setupScene() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x0d0510, 0.08);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 10;
+
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true,
+                powerPreference: 'high-performance'
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setClearColor(0x0d0510, 1);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            document.body.insertBefore(renderer.domElement, document.body.firstChild);
+        }
+
+        function setupLighting() {
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0xfda4af, 0.3);
+            scene.add(ambientLight);
+
+            // Main point light (rose tinted)
+            const pointLight = new THREE.PointLight(0xfda4af, 1.5, 30);
+            pointLight.position.set(0, 5, 5);
+            scene.add(pointLight);
+
+            // Secondary point light
+            const pointLight2 = new THREE.PointLight(0xf472b6, 1, 20);
+            pointLight2.position.set(-5, -3, 8);
+            scene.add(pointLight2);
+
+            // Rim light
+            const rimLight = new THREE.PointLight(0xd4a574, 0.8, 25);
+            rimLight.position.set(8, 0, -5);
+            scene.add(rimLight);
+        }
+
+        function setupPostProcessing() {
+            composer = new THREE.EffectComposer(renderer);
+
+            const renderPass = new THREE.RenderPass(scene, camera);
+            composer.addPass(renderPass);
+
+            const bloomPass = new THREE.UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                CONFIG.bloomStrength,
+                CONFIG.bloomRadius,
+                CONFIG.bloomThreshold
+            );
+            composer.addPass(bloomPass);
+        }
+
+        // ============================================
+        // CHERRY BLOSSOM PETALS
+        // ============================================
+        function createCherryBlossoms() {
+            const petalGeometry = createPetalGeometry();
+            const petalColors = [0xfda4af, 0xfecdd3, 0xffe4e6, 0xfb7185, 0xf9a8d4];
+
+            for (let i = 0; i < CONFIG.petalCount; i++) {
+                const colorIndex = Math.floor(Math.random() * petalColors.length);
+                const petalMaterial = new THREE.MeshBasicMaterial({
+                    color: petalColors[colorIndex],
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.7 + Math.random() * 0.3
+                });
+
+                const petal = new THREE.Mesh(petalGeometry, petalMaterial);
+
+                // Random position in vortex
+                const angle = Math.random() * Math.PI * 2;
+                const radius = CONFIG.vortexRadius.min + Math.random() * (CONFIG.vortexRadius.max - CONFIG.vortexRadius.min);
+                const height = (Math.random() - 0.5) * CONFIG.vortexHeight;
+
+                petal.position.set(
+                    Math.cos(angle) * radius,
+                    height,
+                    Math.sin(angle) * radius
+                );
+
+                petal.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
+
+                const scale = 0.05 + Math.random() * 0.1;
+                petal.scale.set(scale, scale, scale);
+
+                petal.userData = {
+                    angle: angle,
+                    radius: radius,
+                    baseY: height,
+                    speed: 0.003 + Math.random() * 0.008,
+                    wobbleSpeed: 0.5 + Math.random() * 1,
+                    wobbleAmount: 0.1 + Math.random() * 0.2,
+                    rotSpeed: { x: (Math.random() - 0.5) * 0.02, y: (Math.random() - 0.5) * 0.02, z: (Math.random() - 0.5) * 0.02 }
+                };
+
+                scene.add(petal);
+                petalMeshes.push(petal);
+            }
+        }
+
+        function createPetalGeometry() {
+            const shape = new THREE.Shape();
+            shape.moveTo(0, 0);
+            shape.bezierCurveTo(0.5, 0.5, 0.5, 1.5, 0, 2);
+            shape.bezierCurveTo(-0.5, 1.5, -0.5, 0.5, 0, 0);
+
+            return new THREE.ShapeGeometry(shape);
+        }
+
+        // ============================================
+        // PHOTO JSON LOADING
+        // ============================================
+        async function loadPhotosFromJSON() {
+            try {
+                const response = await fetch('photos.json');
+                if (response.ok) {
+                    const photos = await response.json();
+                    if (photos && photos.length > 0) {
+                        CONFIG.photos = photos;
+                        console.log(`✨ Loaded ${photos.length} photos from photos.json`);
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.log('📷 No photos.json found - using placeholders');
+                console.log('   Run: node scan-photos.js to generate it');
+            }
+
+            // Use default placeholders if JSON not found
+            CONFIG.photos = DEFAULT_PHOTOS;
+        }
+
+        // ============================================
+        // PHOTO LOADING
+        // ============================================
+        function loadPhotos() {
+            const totalPhotos = CONFIG.photos.length;
+            document.getElementById('photo-count').textContent = totalPhotos;
+
+            // Create all photo meshes immediately with procedural textures
+            CONFIG.photos.forEach((photoData, index) => {
+                createGradientPhotoMesh(photoData, index, totalPhotos);
+            });
+
+            // Hide loading screen immediately
+            setTimeout(() => {
+                document.getElementById('loading-screen').classList.add('hidden');
+            }, 800);
+
+            // Now try to load real images and replace textures
+            const loader = new THREE.TextureLoader();
+            loader.crossOrigin = 'anonymous';
+
+            CONFIG.photos.forEach((photoData, index) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    const texture = new THREE.Texture(img);
+                    texture.needsUpdate = true;
+
+                    // Find the mesh and update its texture
+                    const mesh = photoMeshes.find(m => m.userData.index === index);
+                    if (mesh && mesh.material) {
+                        mesh.material.map = texture;
+                        mesh.material.needsUpdate = true;
+                    }
+                };
+                img.src = photoData.url;
+            });
+        }
+
+        function createGradientPhotoMesh(photoData, index, totalPhotos) {
+            // Create a beautiful procedural gradient placeholder
+            const canvas = document.createElement('canvas');
+            canvas.width = 600;
+            canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+
+            // Create unique gradient for each photo
+            const hue1 = (index * 30 + 340) % 360;
+            const hue2 = (index * 30 + 360) % 360;
+            const gradient = ctx.createLinearGradient(0, 0, 600, 400);
+            gradient.addColorStop(0, `hsl(${hue1}, 70%, 70%)`);
+            gradient.addColorStop(0.5, `hsl(${hue2}, 60%, 60%)`);
+            gradient.addColorStop(1, `hsl(${hue1}, 80%, 50%)`);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 600, 400);
+
+            // Add some decorative elements
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            for (let i = 0; i < 20; i++) {
+                const x = Math.random() * 600;
+                const y = Math.random() * 400;
+                const r = Math.random() * 30 + 10;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Add title text
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.font = 'bold 28px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(photoData.title, 300, 180);
+
+            ctx.font = '16px sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.fillText(photoData.date, 300, 220);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const geometry = new THREE.PlaneGeometry(2.4, 1.6);
+            const material = new THREE.MeshStandardMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                roughness: 0.3,
+                metalness: 0.1,
+                emissive: 0xfda4af,
+                emissiveIntensity: 0.08
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            setupPhotoMesh(mesh, photoData, index, totalPhotos);
+        }
+
+        function createPhotoMesh(texture, photoData, index, totalPhotos) {
+            const aspect = texture.image.width / texture.image.height;
+            const geometry = new THREE.PlaneGeometry(1.8 * aspect, 1.8);
+
+            const material = new THREE.MeshStandardMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                roughness: 0.3,
+                metalness: 0.1,
+                emissive: 0xfda4af,
+                emissiveIntensity: 0.05
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            setupPhotoMesh(mesh, photoData, index, totalPhotos);
+        }
+
+        function createPlaceholderMesh(photoData, index, totalPhotos) {
+            // Create a beautiful gradient placeholder
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 300;
+            const ctx = canvas.getContext('2d');
+
+            // Gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 400, 300);
+            gradient.addColorStop(0, '#fda4af');
+            gradient.addColorStop(1, '#f472b6');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 400, 300);
+
+            // Add text
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.font = '20px serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(photoData.title, 200, 150);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const geometry = new THREE.PlaneGeometry(2.4, 1.6);
+            const material = new THREE.MeshStandardMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                roughness: 0.3,
+                metalness: 0.1,
+                emissive: 0xfda4af,
+                emissiveIntensity: 0.1
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            setupPhotoMesh(mesh, photoData, index, totalPhotos);
+        }
+
+        function setupPhotoMesh(mesh, photoData, index, totalPhotos) {
+            const angle = (index / totalPhotos) * Math.PI * 2;
+            const radius = CONFIG.vortexRadius.min + Math.random() * 2;
+
+            mesh.userData = {
+                index: index,
+                photoData: photoData,
+                angle: angle,
+                baseAngle: angle,
+                speed: 0.004 + Math.random() * 0.006,
+                radius: radius,
+                baseRadius: radius,
+                y: (Math.random() - 0.5) * 6,
+                baseY: (Math.random() - 0.5) * 6,
+                rotSpeed: (Math.random() - 0.5) * 0.01,
+                hoverGlow: 0
+            };
+
+            scene.add(mesh);
+            photoMeshes.push(mesh);
+
+            // Update loading progress
+            loadedCount++;
+            const progress = (loadedCount / totalPhotos) * 100;
+            document.getElementById('loading-progress').style.width = progress + '%';
+
+            if (loadedCount >= totalPhotos) {
+                setTimeout(() => {
+                    document.getElementById('loading-screen').classList.add('hidden');
+                }, 500);
+            }
+        }
+
+        // ============================================
+        // GESTURE TRACKING
+        // ============================================
+        function setupGestureTracking() {
+            const hands = new Hands({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+            });
+
+            hands.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.6,
+                minTrackingConfidence: 0.6
+            });
+
+            hands.onResults(onHandResults);
+
+            const videoElement = document.getElementById('video-input');
+            const camera = new Camera(videoElement, {
+                onFrame: async () => await hands.send({ image: videoElement }),
+                width: 640,
+                height: 480
+            });
+            camera.start()
+                .then(() => {
+                    console.log('Camera started');
+                    document.getElementById('status-text').innerText = 'Searching for hand...';
+                    document.getElementById('enable-camera-btn').style.display = 'none';
+                })
+                .catch(err => {
+                    console.error('Camera error:', err);
+                    document.getElementById('status-text').innerText = 'Camera Access Required';
+                    document.getElementById('enable-camera-btn').style.display = 'block';
+                });
+        }
+
+        // Add enable camera button handler
+        document.getElementById('enable-camera-btn')?.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                // Stop stream immediately, just wanted permission
+                stream.getTracks().forEach(track => track.stop());
+
+                // Restart camera utility
+                setupGestureTracking();
+                document.getElementById('enable-camera-btn').style.display = 'none';
+            } catch (err) {
+                alert('Camera permission denied. Please enable it in browser settings.');
+            }
+        });
+
+        function onHandResults(results) {
+            const statusEl = document.getElementById('status-text');
+            const cursorEl = document.getElementById('gesture-cursor');
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                statusEl.innerText = 'Vortex Control Active';
+                const landmarks = results.multiHandLandmarks[0];
+
+                const indexTip = landmarks[8];
+                const thumbTip = landmarks[4];
+
+                // Calculate velocity
+                handVelocity.x = (1 - indexTip.x) - lastHandPos.x;
+                handVelocity.y = indexTip.y - lastHandPos.y;
+                lastHandPos.x = 1 - indexTip.x;
+                lastHandPos.y = indexTip.y;
+
+                // Update cursor
+                cursorEl.style.display = 'block';
+                cursorEl.style.left = `${(1 - indexTip.x) * 100}%`;
+                cursorEl.style.top = `${indexTip.y * 100}%`;
+
+                // Map to 3D coordinates
+                cursor3D.x = (1 - indexTip.x) * 2 - 1;
+                cursor3D.y = -(indexTip.y * 2 - 1);
+
+                // Pinch detection
+                const dx = indexTip.x - thumbTip.x;
+                const dy = indexTip.y - thumbTip.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                wasPinching = isPinching;
+                isPinching = dist < 0.05;
+
+                if (isPinching && !wasPinching) {
+                    onPinchStart();
+                }
+
+                cursorEl.classList.toggle('pinching', isPinching);
+            } else {
+                statusEl.innerText = 'Searching for hand...';
+                cursorEl.style.display = 'none';
+            }
+        }
+
+        function onPinchStart() {
+            raycaster.setFromCamera(cursor3D, camera);
+            const intersects = raycaster.intersectObjects(photoMeshes);
+
+            if (intersects.length > 0) {
+                const hit = intersects[0].object;
+
+                if (selectedPhoto === hit) {
+                    // Open fullscreen modal
+                    openModal(hit);
+                } else {
+                    // Select photo
+                    selectedPhoto = hit;
+                    vortexActive = false;
+                }
+            } else if (selectedPhoto) {
+                // Deselect
+                selectedPhoto = null;
+                vortexActive = true;
+            }
+        }
+
+        // ============================================
+        // MOUSE/TOUCH CONTROLS (Fallback)
+        // ============================================
+        function setupMouseControls() {
+            const cursorEl = document.getElementById('gesture-cursor');
+            const statusEl = document.getElementById('status-text');
+
+            // Show cursor and update status
+            cursorEl.style.display = 'block';
+            statusEl.innerText = 'Mouse Control Active';
+
+            // Mouse move
+            document.addEventListener('mousemove', (e) => {
+                const x = e.clientX / window.innerWidth;
+                const y = e.clientY / window.innerHeight;
+
+                cursorEl.style.left = `${x * 100}%`;
+                cursorEl.style.top = `${y * 100}%`;
+
+                cursor3D.x = x * 2 - 1;
+                cursor3D.y = -(y * 2 - 1);
+
+                // Update velocity for animation effects
+                handVelocity.x = (x - lastHandPos.x) * 2;
+                handVelocity.y = (y - lastHandPos.y) * 2;
+                lastHandPos.x = x;
+                lastHandPos.y = y;
+            });
+
+            // Mouse click = pinch
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('.modal-close') || e.target.closest('.gallery-modal')) return;
+
+                cursorEl.classList.add('pinching');
+                onPinchStart();
+                setTimeout(() => cursorEl.classList.remove('pinching'), 200);
+            });
+
+            // Touch support
+            document.addEventListener('touchmove', (e) => {
+                const touch = e.touches[0];
+                const x = touch.clientX / window.innerWidth;
+                const y = touch.clientY / window.innerHeight;
+
+                cursorEl.style.left = `${x * 100}%`;
+                cursorEl.style.top = `${y * 100}%`;
+
+                cursor3D.x = x * 2 - 1;
+                cursor3D.y = -(y * 2 - 1);
+            });
+
+            document.addEventListener('touchend', () => {
+                onPinchStart();
+            });
+        }
+
+        // Initialize mouse controls immediately as fallback
+        setupMouseControls();
+
+        // ============================================
+        // MODAL FUNCTIONS
+        // ============================================
+        function openModal(photoMesh) {
+            const modal = document.getElementById('gallery-modal');
+            const modalImage = document.getElementById('modal-image');
+            const modalTitle = document.getElementById('modal-title');
+            const modalDate = document.getElementById('modal-date');
+
+            const photoData = photoMesh.userData.photoData;
+            modalImage.src = photoData.url;
+            modalTitle.textContent = photoData.title;
+            modalDate.textContent = photoData.date;
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('gallery-modal');
+            modal.classList.remove('active');
+
+            // Reset selection
+            selectedPhoto = null;
+            vortexActive = true;
+        }
+
+        // ============================================
+        // ANIMATION LOOP
+        // ============================================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = Date.now() * 0.001;
+            const handSpeed = Math.sqrt(handVelocity.x ** 2 + handVelocity.y ** 2);
+
+            // Animate petals
+            petalMeshes.forEach(petal => {
+                const data = petal.userData;
+
+                if (vortexActive) {
+                    data.angle += data.speed * (1 + handSpeed * 5);
+
+                    const wobble = Math.sin(time * data.wobbleSpeed) * data.wobbleAmount;
+                    const currentRadius = data.radius + wobble;
+
+                    petal.position.x = Math.cos(data.angle) * currentRadius;
+                    petal.position.z = Math.sin(data.angle) * currentRadius;
+                    petal.position.y = data.baseY + Math.sin(time * 0.5 + data.angle) * 0.5;
+
+                    petal.rotation.x += data.rotSpeed.x;
+                    petal.rotation.y += data.rotSpeed.y;
+                    petal.rotation.z += data.rotSpeed.z;
+                } else {
+                    // Scatter petals outward when a photo is selected
+                    petal.position.x += (Math.sign(petal.position.x) * 0.02);
+                    petal.position.z += (Math.sign(petal.position.z) * 0.02);
+                    petal.material.opacity *= 0.995;
+                }
+            });
+
+            // Animate photos
+            photoMeshes.forEach(mesh => {
+                const data = mesh.userData;
+
+                if (mesh === selectedPhoto) {
+                    // Selected photo moves to front
+                    mesh.position.lerp(new THREE.Vector3(0, 0, 6), 0.08);
+                    mesh.rotation.y += (0 - mesh.rotation.y) * 0.1;
+                    mesh.rotation.x += (0 - mesh.rotation.x) * 0.1;
+                    mesh.rotation.z += (0 - mesh.rotation.z) * 0.1;
+
+                    // Scale up slightly
+                    mesh.scale.lerp(new THREE.Vector3(1.2, 1.2, 1.2), 0.1);
+
+                    // Glow effect
+                    mesh.material.emissiveIntensity = 0.2;
+                } else {
+                    if (vortexActive) {
+                        data.angle += data.speed * (1 + handSpeed * 3);
+
+                        const funnelFactor = (data.y + CONFIG.vortexHeight / 2) / CONFIG.vortexHeight;
+                        const currentRadius = data.radius * (0.8 + funnelFactor * 0.5);
+
+                        mesh.position.x = Math.cos(data.angle) * currentRadius;
+                        mesh.position.z = Math.sin(data.angle) * currentRadius;
+                        mesh.position.y = data.y + Math.sin(time + data.angle) * 0.15;
+
+                        mesh.lookAt(0, mesh.position.y, 0);
+                        mesh.rotation.z += data.rotSpeed;
+
+                        // Hover interaction
+                        const screenPos = mesh.position.clone().project(camera);
+                        const distToCursor = Math.sqrt(
+                            (screenPos.x - cursor3D.x) ** 2 +
+                            (screenPos.y - cursor3D.y) ** 2
+                        );
+
+                        if (distToCursor < 0.3) {
+                            data.hoverGlow = Math.min(data.hoverGlow + 0.05, 1);
+                            mesh.scale.lerp(new THREE.Vector3(1.1, 1.1, 1.1), 0.1);
+                        } else {
+                            data.hoverGlow = Math.max(data.hoverGlow - 0.02, 0);
+                            mesh.scale.lerp(new THREE.Vector3(1, 1, 1), 0.05);
+                        }
+
+                        mesh.material.emissiveIntensity = 0.05 + data.hoverGlow * 0.15;
+                    } else {
+                        // Fade out other photos when one is selected
+                        mesh.position.z -= 0.05;
+                        mesh.material.opacity = Math.max(0.2, mesh.material.opacity - 0.01);
+                        mesh.material.transparent = true;
+                    }
+                }
+            });
+
+            // Decay hand velocity
+            handVelocity.x *= 0.9;
+            handVelocity.y *= 0.9;
+
+            composer.render();
+        }
+
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function createAmbientParticles() {
+            const container = document.getElementById('ambient-particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'ambient-particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // ============================================
+        // START APPLICATION
+        // ============================================
+        window.onload = init;
+    </script>
+</body>
+
+</html>
