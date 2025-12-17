@@ -24,22 +24,12 @@ function scanPhotos() {
     const files = fs.readdirSync(PHOTOS_DIR);
     const photos = [];
 
-    // Check for base URL argument (e.g. node scan-photos.js --base-url https://oss.aliyun.com/...)
-    const args = process.argv.slice(2);
-    let baseUrl = 'photos/';
-    const urlArgIndex = args.indexOf('--base-url');
-    if (urlArgIndex !== -1 && args[urlArgIndex + 1]) {
-        baseUrl = args[urlArgIndex + 1];
-        if (!baseUrl.endsWith('/')) baseUrl += '/';
-        console.log(`🌐 Using Base URL: ${baseUrl}`);
-    }
-
     files.forEach((file, index) => {
         const ext = path.extname(file).toLowerCase();
         if (IMAGE_EXTENSIONS.includes(ext)) {
             const name = path.basename(file, ext);
             photos.push({
-                url: `${baseUrl}${file}`,
+                url: `photos/${file}`,
                 title: formatTitle(name),
                 date: `Memory ${index + 1}`
             });
