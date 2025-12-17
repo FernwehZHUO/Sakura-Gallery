@@ -506,8 +506,64 @@
         // CONFIGURATION
         // ============================================
         const CONFIG = {
-            // Photos will be loaded from photos.json (run: node scan-photos.js)
-            photos: [],
+            photos: [
+                { url: 'photos/IMG_20251205_093134.jpg', title: 'Dec 5 Morning', date: 'Memory 1' },
+                { url: 'photos/IMG_20251205_140406.jpg', title: 'Dec 5 Afternoon', date: 'Memory 2' },
+                { url: 'photos/IMG_20251205_141640.jpg', title: 'Dec 5 Walk', date: 'Memory 3' },
+                { url: 'photos/IMG_20251205_142831.jpg', title: 'Dec 5 Scene', date: 'Memory 4' },
+                { url: 'photos/IMG_20251205_145111.jpg', title: 'Dec 5 View', date: 'Memory 5' },
+                { url: 'photos/IMG_20251205_150509.jpg', title: 'Dec 5 Moment', date: 'Memory 6' },
+                { url: 'photos/IMG_20251205_152254.jpg', title: 'Dec 5 Capture', date: 'Memory 7' },
+                { url: 'photos/IMG_20251205_152326.jpg', title: 'Dec 5 Shot', date: 'Memory 8' },
+                { url: 'photos/IMG_20251205_152407.jpg', title: 'Dec 5 Frame', date: 'Memory 9' },
+                { url: 'photos/IMG_20251205_152722.jpg', title: 'Dec 5 Photo', date: 'Memory 10' },
+                { url: 'photos/IMG_20251205_152723.jpg', title: 'Dec 5 Snap', date: 'Memory 11' },
+                { url: 'photos/IMG_20251205_152815.jpg', title: 'Dec 5 Click', date: 'Memory 12' },
+                { url: 'photos/IMG_20251205_161100.jpg', title: 'Dec 5 Pic', date: 'Memory 13' },
+                { url: 'photos/IMG_20251205_161425.jpg', title: 'Dec 5 Image', date: 'Memory 14' },
+                { url: 'photos/IMG_20251205_162253.jpg', title: 'Dec 5 Vista', date: 'Memory 15' },
+                { url: 'photos/IMG_20251205_172750.jpg', title: 'Dec 5 Evening', date: 'Memory 16' },
+                { url: 'photos/IMG_20251205_172752.jpg', title: 'Dec 5 Dusk', date: 'Memory 17' },
+                { url: 'photos/IMG_20251205_172858.jpg', title: 'Dec 5 Sunset', date: 'Memory 18' },
+                { url: 'photos/IMG_20251205_173818.jpg', title: 'Dec 5 Golden', date: 'Memory 19' },
+                { url: 'photos/IMG_20251205_174900.jpg', title: 'Dec 5 Hour', date: 'Memory 20' },
+                { url: 'photos/IMG_20251205_175622.jpg', title: 'Dec 5 Light', date: 'Memory 21' },
+                { url: 'photos/IMG_20251205_193155.jpg', title: 'Dec 5 Night', date: 'Memory 22' },
+                { url: 'photos/IMG_20251205_193309.jpg', title: 'Dec 5 Stars', date: 'Memory 23' },
+                { url: 'photos/IMG_20251205_200418.jpg', title: 'Dec 5 Late', date: 'Memory 24' },
+                { url: 'photos/IMG_20251205_200903.jpg', title: 'Dec 5 Moon', date: 'Memory 25' },
+                { url: 'photos/IMG_20251205_201307.jpg', title: 'Dec 5 Dark', date: 'Memory 26' },
+                { url: 'photos/IMG_20251205_201630.jpg', title: 'Dec 5 Quiet', date: 'Memory 27' },
+                { url: 'photos/IMG_20251205_202539.jpg', title: 'Dec 5 Rest', date: 'Memory 28' },
+                { url: 'photos/IMG_20251206_102758.jpg', title: 'Dec 6 Dawn', date: 'Memory 29' },
+                { url: 'photos/IMG_20251206_102810.jpg', title: 'Dec 6 Start', date: 'Memory 30' },
+                { url: 'photos/IMG_20251206_120937.jpg', title: 'Dec 6 Noon', date: 'Memory 31' },
+                { url: 'photos/IMG_20251206_120941.jpg', title: 'Dec 6 Lunch', date: 'Memory 32' },
+                { url: 'photos/IMG_20251206_121049.jpg', title: 'Dec 6 Midday', date: 'Memory 33' },
+                { url: 'photos/IMG_20251206_164309.jpg', title: 'Dec 6 Afternoon', date: 'Memory 34' },
+                { url: 'photos/IMG_20251206_164549.jpg', title: 'Dec 6 Break', date: 'Memory 35' },
+                { url: 'photos/IMG_20251206_165641.jpg', title: 'Dec 6 Tea', date: 'Memory 36' },
+                { url: 'photos/IMG_20251206_170815.jpg', title: 'Dec 6 Walk', date: 'Memory 37' },
+                { url: 'photos/IMG_20251206_193921.jpg', title: 'Dec 6 Evening', date: 'Memory 38' },
+                { url: 'photos/IMG_20251206_195436.jpg', title: 'Dec 6 Dinner', date: 'Memory 39' },
+                { url: 'photos/IMG_20251206_212529.jpg', title: 'Dec 6 Night', date: 'Memory 40' },
+                { url: 'photos/IMG_20251206_212536.jpg', title: 'Dec 6 Late', date: 'Memory 41' },
+                { url: 'photos/IMG_20251207_100943.jpg', title: 'Dec 7 Morning', date: 'Memory 42' },
+                { url: 'photos/IMG_20251207_101051.jpg', title: 'Dec 7 Wake', date: 'Memory 43' },
+                { url: 'photos/IMG_20251207_101058.jpg', title: 'Dec 7 Coffee', date: 'Memory 44' },
+                { url: 'photos/IMG_20251207_102729.jpg', title: 'Dec 7 Walk', date: 'Memory 45' },
+                { url: 'photos/IMG_20251207_102807.jpg', title: 'Dec 7 Path', date: 'Memory 46' },
+                { url: 'photos/IMG_20251207_103002.jpg', title: 'Dec 7 Trail', date: 'Memory 47' },
+                { url: 'photos/IMG_20251207_103053.jpg', title: 'Dec 7 Nature', date: 'Memory 48' },
+                { url: 'photos/IMG_20251207_105513.jpg', title: 'Dec 7 View', date: 'Memory 49' },
+                { url: 'photos/IMG_20251207_182622.jpg', title: 'Dec 7 Evening', date: 'Memory 50' },
+                { url: 'photos/IMG_20251207_211234.jpg', title: 'Dec 7 Night', date: 'Memory 51' },
+                { url: 'photos/IMG_20251208_125652.jpg', title: 'Dec 8 Noon', date: 'Memory 52' },
+                { url: 'photos/IMG_20251208_125701.jpg', title: 'Dec 8 Lunch', date: 'Memory 53' },
+                { url: 'photos/IMG_20251208_171834.jpg', title: 'Dec 8 Afternoon', date: 'Memory 54' },
+                { url: 'photos/IMG_20251208_172040.jpg', title: 'Dec 8 Tea', date: 'Memory 55' },
+                { url: 'photos/IMG_20251208_173711.jpg', title: 'Dec 8 Sunset', date: 'Memory 56' }
+            ],
             petalCount: 400,
             vortexRadius: { min: 2, max: 5 },
             vortexHeight: 10,
@@ -515,13 +571,6 @@
             bloomRadius: 0.4,
             bloomThreshold: 0.2
         };
-
-        // Default placeholder photos (shown if photos.json doesn't exist)
-        const DEFAULT_PHOTOS = [
-            { url: '', title: 'Add Your Photos', date: 'Run: node scan-photos.js' },
-            { url: '', title: 'Drop images in photos/', date: 'Then refresh this page' },
-            { url: '', title: 'Supported: jpg, png, webp', date: 'Any filename works!' }
-        ];
 
         // ============================================
         // GLOBAL STATE
@@ -548,15 +597,8 @@
                 setupLighting();
                 createCherryBlossoms();
 
-                // Load photos from JSON
-                try {
-                    await loadPhotosFromJSON();
-                    loadPhotos();
-                } catch (photoError) {
-                    console.error("Error loading photos:", photoError);
-                    // Force hide loading screen if photo loading crashes
-                    document.getElementById('loading-screen').classList.add('hidden');
-                }
+                // Load photos directly from embedded CONFIG
+                loadPhotos();
 
                 setupPostProcessing();
                 setupGestureTracking();
